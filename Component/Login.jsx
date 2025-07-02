@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Alert, ImageBackground } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// import apiClient from '../api/apiClient';
 import apiClient from './api/apiClient';
-
 
 const backgroundImage = {
   uri: 'https://www.akamai.com/site/im-demo/perceptual-standard.jpg?imbypass=true',
