@@ -1,55 +1,68 @@
-// components/AppLayout.js
+
+// Component: AppLayout.js
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Platform, TouchableOpacity, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 
-const userProfilePic = 'https://i.pravatar.cc/100?img=5'; // Example avatar
+const userProfilePic = 'https://i.pravatar.cc/100?img=5';
 
-const AppLayout = ({ title, children }) => {
-  const navigation = useNavigation();
+const AppLayout = ({ title, children, setActiveComponent }) => {
   const [showMenu, setShowMenu] = useState(false);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.menuBtn} onPress={() => setShowMenu((prev) => !prev)}>
+          <TouchableOpacity style={styles.menuBtn} onPress={() => setShowMenu(prev => !prev)}>
             <Icon name="menu" size={28} color="#1a237e" />
           </TouchableOpacity>
-          {navigation.canGoBack() && (
-            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-              <Icon name="arrow-right" size={22} color="#1a237e" />
-            </TouchableOpacity>
-          )}
+
           {title && <Text style={styles.title}>{title}</Text>}
-          <TouchableOpacity style={styles.avatarBtn} onPress={() => setShowMenu((prev) => !prev)}>
+
+          <TouchableOpacity style={styles.avatarBtn} onPress={() => setShowMenu(prev => !prev)}>
             <Image source={{ uri: userProfilePic }} style={styles.avatar} />
           </TouchableOpacity>
         </View>
+
         {showMenu && (
           <View style={styles.leftMenuOverlay}>
             <View style={styles.leftMenuCard}>
               <Text style={styles.leftMenuHeading}>Menu</Text>
-              <TouchableOpacity style={styles.leftMenuItem} onPress={() => { setShowMenu(false); navigation.navigate('Profile'); }}>
+
+              <TouchableOpacity
+                style={styles.leftMenuItem}
+                onPress={() => {
+                  setShowMenu(false);
+                  setActiveComponent('profile');
+                }}>
                 <Icon name="user" size={22} color="#4a90e2" style={styles.leftMenuIcon} />
                 <Text style={styles.leftMenuText}>Profile</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.leftMenuItem} onPress={() => { setShowMenu(false); navigation.navigate('Chat_Com'); }}>
+
+              <TouchableOpacity
+                style={styles.leftMenuItem}
+                onPress={() => {
+                  setShowMenu(false);
+                  setActiveComponent('chat');
+                }}>
                 <Icon name="message-circle" size={22} color="#4a90e2" style={styles.leftMenuIcon} />
                 <Text style={styles.leftMenuText}>Chat</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.leftMenuItem} onPress={() => { setShowMenu(false); navigation.navigate('Deposit'); }}>
+
+              <TouchableOpacity
+                style={styles.leftMenuItem}
+                onPress={() => {
+                  setShowMenu(false);
+                  setActiveComponent('deposit');
+                }}>
                 <Icon name="credit-card" size={22} color="#4a90e2" style={styles.leftMenuIcon} />
                 <Text style={styles.leftMenuText}>Deposit</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.leftMenuItem} onPress={() => { setShowMenu(false); navigation.navigate('Settings'); }}>
-                <Icon name="settings" size={22} color="#4a90e2" style={styles.leftMenuIcon} />
-                <Text style={styles.leftMenuText}>Settings</Text>
-              </TouchableOpacity>
+
             </View>
           </View>
         )}
+
         <View style={styles.content}>{children}</View>
       </View>
     </SafeAreaView>
@@ -86,12 +99,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#e3e7f1',
   },
-  backBtn: {
-    marginRight: 8,
-    padding: 6,
-    borderRadius: 6,
-    backgroundColor: '#e3e7f1',
-  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -114,7 +121,7 @@ const styles = StyleSheet.create({
   },
   leftMenuOverlay: {
     position: 'absolute',
-    top: 65, // Adjusted to fit below the header
+    top: 65,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     right: 16,
     left: 16,

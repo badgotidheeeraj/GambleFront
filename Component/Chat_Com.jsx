@@ -1,23 +1,42 @@
-// ...existing code from Componet/Chat_Com.jsx...
 import React, { useState, useEffect, useRef } from 'react';
-import {View,Text,TextInput,TouchableOpacity,FlatList,StyleSheet,KeyboardAvoidingView,Platform} from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 
-export default function Chat({ onLogout }) {
+export default function Chat({ userId = 1, myUsername = 'me' }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const flatListRef = useRef();
   const ws = useRef(null);
 
   useEffect(() => {
-    ws.current = new WebSocket('ws://127.0.0.1:8000/ws/chat/');
+    const wsUrl = `ws://127.0.0.1:8000/ws/chat/${userId}/`;
+    ws.current = new WebSocket(wsUrl);
 
     ws.current.onopen = () => {
-      console.log('Connected to chat server');
+      console.log('✅ Connected to chat server');
     };
 
     ws.current.onmessage = (e) => {
-      const data = JSON.parse(e.data);
-      setMessages((prev) => [...prev, { text: data.message, from: 'other' }]);
+      try {
+        const data = JSON.parse(e.data);
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: data.message,
+            from: data.sender === myUsername ? 'me' : 'other',
+          },
+        ]);
+      } catch (err) {
+        console.error('Invalid message format', err);
+      }
     };
 
     ws.current.onerror = (e) => {
@@ -25,19 +44,24 @@ export default function Chat({ onLogout }) {
     };
 
     ws.current.onclose = () => {
-      console.log('Chat connection closed');
+      console.log('❌ Chat connection closed');
     };
 
     return () => {
       ws.current?.close();
     };
-  }, []);
+  }, [userId]);
 
   const handleSend = () => {
     if (!text.trim()) return;
-    const message = { text, from: 'me' };
-    setMessages((prev) => [...prev, message]);
-    ws.current?.send(JSON.stringify({ message: text }));
+
+    const message = {
+      message: text,
+      receiver_id: userId, // Optional: for private chat
+    };
+
+    ws.current?.send(JSON.stringify(message));
+    setMessages((prev) => [...prev, { text, from: 'me' }]);
     setText('');
   };
 

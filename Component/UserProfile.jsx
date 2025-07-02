@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 
-const UserProfile = ({ username = 'User', email = 'user@example.com', avatarUrl }) => {
+const UserProfile = ({ username = 'Dheeraj kumar singh chaudhary ', email = 'user@example.com', avatarUrl }) => {
   return (
     <View style={styles.container}>
       <Image
