@@ -1,13 +1,78 @@
-
-// Component: AppLayout.js
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Platform, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TextInput,
+  Platform,
+  TouchableOpacity,
+  Image,
+  FlatList,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 
 const userProfilePic = 'https://i.pravatar.cc/100?img=5';
 
+
+
+const USERS = [
+  { id: 1, name: 'Alice Johnson', username: 'alicej', pic: 'https://i.pravatar.cc/100?img=1' },
+  { id: 2, name: 'Bob Smith', username: 'bobsmith', pic: 'https://i.pravatar.cc/100?img=2' },
+  { id: 3, name: 'Charlie Davis', username: 'charlied', pic: 'https://i.pravatar.cc/100?img=3' },
+  { id: 4, name: 'David Wilson', username: 'davidw', pic: 'https://i.pravatar.cc/100?img=4' },
+  { id: 5, name: 'Eve Thompson', username: 'evet', pic: 'https://i.pravatar.cc/100?img=5' },
+];
+
 const AppLayout = ({ title, children, setActiveComponent }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      // earch-users/?q="
+
+      setDebouncedSearch(searchText.trim());
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchText]);
+
+  useEffect(() => {
+    if (debouncedSearch === '') {
+      setFilteredUsers([]);
+      return;
+    }
+
+    setLoading(true);
+    const filtered = USERS.filter(user =>
+      user.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      user.username.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+    setFilteredUsers(filtered);
+    setLoading(false);
+  }, [debouncedSearch]);
+
+  const renderUserItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.userItem}
+      onPress={() => {
+        setSearchText('');
+        setFilteredUsers([]);
+        setActiveComponent('chat');
+        console.log('Selected user:', item);
+      }}
+    >
+      <Image source={{ uri: item.pic }} style={styles.userPic} />
+      <View style={{ marginLeft: 10 }}>
+        <Text style={styles.userName}>{item.name}</Text>
+        <Text style={styles.userUsername}>@{item.username}</Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -19,7 +84,36 @@ const AppLayout = ({ title, children, setActiveComponent }) => {
 
           {title && <Text style={styles.title}>{title}</Text>}
 
-          <TouchableOpacity style={styles.avatarBtn} onPress={() => setShowMenu(prev => !prev)}>
+          <View style={styles.searchWrapper}>
+            <View style={styles.searchContainer}>
+              <Icon name="search" size={18} color="#666" style={styles.searchIcon} />
+              <TextInput
+                style={styles.textInput}
+                placeholder="Search users..."
+                value={searchText}
+                onChangeText={setSearchText}
+                returnKeyType="search"
+                clearButtonMode="while-editing"
+              />
+            </View>
+
+            {filteredUsers.length > 0 && (
+              <View style={styles.searchResults}>
+                {loading ? (
+                  <Text>Loading...</Text>
+                ) : (
+                  <FlatList
+                    data={filteredUsers}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={renderUserItem}
+                    keyboardShouldPersistTaps="handled"
+                  />
+                )}
+              </View>
+            )}
+          </View>
+
+          <TouchableOpacity style={styles.avatarBtn} onPress={() => console.log('Avatar button pressed')}>
             <Image source={{ uri: userProfilePic }} style={styles.avatar} />
           </TouchableOpacity>
         </View>
@@ -29,24 +123,15 @@ const AppLayout = ({ title, children, setActiveComponent }) => {
             <View style={styles.leftMenuCard}>
               <Text style={styles.leftMenuHeading}>Menu</Text>
 
-
-
               <TouchableOpacity
                 style={styles.leftMenuItem}
                 onPress={() => {
                   setShowMenu(false);
                   setActiveComponent('homescreen');
                 }}>
-                <Icon
-                  name="trending-up"
-                  size={22}
-                  color="#4a90e2"
-                  style={styles.leftMenuIcon}
-                />
-
+                <Icon name="trending-up" size={22} color="#4a90e2" style={styles.leftMenuIcon} />
                 <Text style={styles.leftMenuText}>Home</Text>
               </TouchableOpacity>
-
 
               <TouchableOpacity
                 style={styles.leftMenuItem}
@@ -77,8 +162,6 @@ const AppLayout = ({ title, children, setActiveComponent }) => {
                 <Icon name="credit-card" size={22} color="#4a90e2" style={styles.leftMenuIcon} />
                 <Text style={styles.leftMenuText}>Deposit</Text>
               </TouchableOpacity>
-
-              
             </View>
           </View>
         )}
@@ -90,107 +173,149 @@ const AppLayout = ({ title, children, setActiveComponent }) => {
 };
 
 const styles = StyleSheet.create({
+  // Container Layouts
   safeArea: {
     flex: 1,
-    backgroundColor: '#eaf0fa',
-    paddingTop: Platform.OS === 'android' ? 25 : 0,
+    backgroundColor: '#fff',
   },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 6,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
   },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+
+  // Header Section
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#f8f9fa',
+    zIndex: 100, // ensures it stays above overlay content
   },
   menuBtn: {
-    marginRight: 12,
     padding: 6,
-    borderRadius: 6,
-    backgroundColor: '#e3e7f1',
   },
   title: {
-    fontSize: 28,
+    flex: 1,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1a237e',
-    letterSpacing: 1,
-    flex: 1,
-    textAlign: 'center',
+    marginHorizontal: 12,
   },
-  avatarBtn: {
-    marginLeft: 12,
+
+  // Search Bar
+  searchWrapper: {
+    flex: 2,
+    position: 'relative',
+    zIndex: 50, // controls dropdown layering
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e9ecef',
     borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#eaf0fa',
+    paddingHorizontal: 10,
+    height: 36,
+  },
+  searchIcon: {
+    marginRight: 6,
+  },
+  textInput: {
+    flex: 1,
+    paddingVertical: 0,
+    color: '#333',
+  },
+
+  // Search Results Dropdown
+  searchResults: {
+    position: 'absolute',
+    top: 40,
+    left: 0,
+    right: 0,
+    maxHeight: 180,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 10,
+    zIndex: 60,
+  },
+
+  // Search Result Item
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomColor: '#eee',
+    borderBottomWidth: 1,
+  },
+  userPic: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  userName: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#222',
+  },
+  userUsername: {
+    fontSize: 12,
+    color: '#666',
+  },
+
+  // Avatar
+  avatarBtn: {
+    padding: 6,
   },
   avatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
   },
+
+  // Side Menu Overlay
   leftMenuOverlay: {
     position: 'absolute',
-    top: 65,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    right: 16,
-    left: 16,
-    bottom: 32,
-    zIndex: 100,
-    alignItems: 'flex-start',
+    top: Platform.OS === 'android' ? 40 : 60,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 10,
   },
   leftMenuCard: {
     backgroundColor: '#fff',
-    borderRadius: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 0,
-    elevation: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.22,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    minWidth: 180,
-    borderWidth: 1,
-    borderColor: '#eaf0fa',
+    padding: 16,
+    width: 250,
+    height: '100%',
   },
   leftMenuHeading: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 12,
     color: '#1a237e',
-    marginBottom: 8,
-    marginLeft: 22,
-    letterSpacing: 1,
   },
   leftMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 22,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingVertical: 10,
   },
   leftMenuIcon: {
-    marginRight: 14,
+    marginRight: 12,
   },
   leftMenuText: {
-    color: '#1a237e',
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  content: {
-    flex: 1,
+    fontSize: 16,
+    color: '#4a90e2',
   },
 });
+
 
 export default AppLayout;

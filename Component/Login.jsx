@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Alert, ImageBackground } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  Alert,
+  TouchableOpacity,
+  StyleSheet,
+  ImageBackground,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import apiClient from './api/apiClient';
 
-const backgroundImage = {
-  uri: 'https://www.akamai.com/site/im-demo/perceptual-standard.jpg?imbypass=true',
-};
+// Replace with your actual background image
+const backgroundImage = { uri: 'https://www.akamai.com/site/im-demo/perceptual-standard.jpg?imbypass=true' };
 
 const Login = ({ onLoginSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,29 +32,40 @@ const Login = ({ onLoginSuccess }) => {
     }
 
     try {
+      const url = isLogin
+        ? 'http://127.0.0.1:8000/api/login/' // replace with actual endpoint
+        : 'http://127.0.0.1:8000/api/signup/';
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          isLogin
+            ? { username, password }
+            : { username, password, password_confirmation: confirmPassword }
+        ),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || data.message || 'Authentication failed');
+      }
+
       if (isLogin) {
-        const response = await apiClient.post('login/', {
-          username,
-          password,
-        });
-        const { access_token } = response.data;
-        await AsyncStorage.setItem('token', access_token);
+        await AsyncStorage.setItem('token', data.access || data.access_token);
         Alert.alert('Success', 'Logged in!');
         onLoginSuccess && onLoginSuccess();
       } else {
-        await apiClient.post('/api/signup', {
-          username,
-          password,
-          password_confirmation: confirmPassword,
-        });
         Alert.alert('Success', 'Signed up! Please login.');
         setIsLogin(true);
         setPassword('');
         setConfirmPassword('');
       }
     } catch (err) {
-      const message = err.response?.data?.detail || err.response?.data?.message || 'Authentication failed';
-      Alert.alert(isLogin ? 'Login Error' : 'Signup Error', message);
+      Alert.alert(isLogin ? 'Login Error' : 'Signup Error', err.message);
     }
   };
 

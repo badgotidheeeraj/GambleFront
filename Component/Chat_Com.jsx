@@ -9,60 +9,80 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function Chat({ userId = 1, myUsername = 'me' }) {
+export default function Chat({ userId = 2, myUsername = 'me' }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const flatListRef = useRef();
   const ws = useRef(null);
 
   useEffect(() => {
-    const wsUrl = `ws://127.0.0.1:8000/ws/chat/${userId}/`;
-    ws.current = new WebSocket(wsUrl);
-
-    ws.current.onopen = () => {
-      console.log('✅ Connected to chat server');
-    };
-
-    ws.current.onmessage = (e) => {
+    const connectWebSocket = async () => {
       try {
-        const data = JSON.parse(e.data);
-        setMessages((prev) => [
-          ...prev,
-          {
-            text: data.message,
-            from: data.sender === myUsername ? 'me' : 'other',
-          },
-        ]);
+        const token = await AsyncStorage.getItem('token');
+
+        if (!token) {
+          console.warn('JWT token not found — login required');
+          return;
+        }
+
+        const wsUrl = `ws://127.0.0.1:8000/ws/chat/${userId}/?token=${token}`;
+        ws.current = new WebSocket(wsUrl);
+
+        ws.current.onopen = () => {
+          console.log('✅ Connected to chat server');
+        };
+
+        ws.current.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            setMessages((prev) => [
+              ...prev,
+              {
+                text: data.message,
+                from: data.sender === myUsername ? 'me' : 'other',
+              },
+            ]);
+          } catch (err) {
+            console.error('Invalid message format', err);
+          }
+        };
+
+        ws.current.onerror = (e) => {
+          console.error('WebSocket error:', e.message);
+        };
+
+        ws.current.onclose = () => {
+          console.log('❌ Chat connection closed');
+        };
       } catch (err) {
-        console.error('Invalid message format', err);
+        console.error('Error connecting to WebSocket:', err);
       }
     };
 
-    ws.current.onerror = (e) => {
-      console.error('WebSocket error:', e.message);
-    };
-
-    ws.current.onclose = () => {
-      console.log('❌ Chat connection closed');
-    };
+    connectWebSocket();
 
     return () => {
       ws.current?.close();
     };
-  }, [userId]);
+  }, [userId, myUsername]);
 
   const handleSend = () => {
     if (!text.trim()) return;
 
     const message = {
       message: text,
-      receiver_id: userId, // Optional: for private chat
+      receiver_id: userId,
     };
 
-    ws.current?.send(JSON.stringify(message));
-    setMessages((prev) => [...prev, { text, from: 'me' }]);
-    setText('');
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify(message));
+      setMessages((prev) => [...prev, { text, from: 'me' }]);
+      setText('');
+    } else {
+      console.warn('WebSocket is not open.');
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -107,15 +127,8 @@ export default function Chat({ userId = 1, myUsername = 'me' }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f1f1f1',
-  },
-  messagesContainer: {
-    padding: 10,
-    flexGrow: 1,
-    justifyContent: 'flex-end',
-  },
+  container: { flex: 1, backgroundColor: '#f1f1f1' },
+  messagesContainer: { padding: 10, flexGrow: 1, justifyContent: 'flex-end' },
   messageBubble: {
     padding: 10,
     borderRadius: 15,
@@ -130,13 +143,11 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: '#e1e1e1',
   },
-  messageText: {
-    color: '#fff',
-  },
+  messageText: { color: '#fff' },
   inputContainer: {
     flexDirection: 'row',
     padding: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fff',
     borderTopWidth: 1,
     borderColor: '#ccc',
   },

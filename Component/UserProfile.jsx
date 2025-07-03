@@ -1,47 +1,127 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TextInput,
+  Button,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import apiClient from './api/apiClient'; // ✅ Your axios instance
 
-const UserProfile = ({
-  firstname = 'Dheeraj',
-  lastname = 'kumar singh chaudhary',
-  email = 'user@example.com',
-  avatarUrl = 'https://i.pravatar.cc/150?img=5',
-  phone_number = '+91 9876543210',
-  balance = 2500.75,
-  is_verified = true,
-  address = 'Lucknow, India',
-  date_of_birth = '1998-05-15',
-}) => {
+const UserProfile = () => {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [editableFields, setEditableFields] = useState({});
+
+  const fetchProfile = async () => {
+    try {
+      const response = await apiClient.get('/profile/');
+      const data = response.data;
+      console.log(data)
+      setProfile(data);
+      setEditableFields({
+        address: data.address || '',
+        date_of_birth: data.date_of_birth || '',
+        phone_number: data.phone_number || '',
+      });
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      const response = await apiClient.patch('/profile/', editableFields);
+      setProfile(response.data);
+      Alert.alert('Success', 'Profile updated successfully.');
+    } catch (err) {
+      Alert.alert('Error', 'Failed to update profile.');
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.center}>
+        <Text>Unable to load profile</Text>
+      </View>
+    );
+  }
+
+  const {
+    id,
+    balance,
+    is_verified,
+    profile_picture,
+  } = profile;
+
   return (
     <View style={styles.container}>
       <Image
-        source={{ uri: avatarUrl }}
+        source={{ uri: `http://127.0.0.1:8000${profile_picture}` }}
         style={styles.avatar}
       />
       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-        <Text style={styles.username}>{firstname} {lastname}</Text>
+        <Text style={styles.username}>User ID #{id}</Text>
         {is_verified && (
           <MaterialIcons name="verified" size={22} color="#4caf50" style={{ marginLeft: 6 }} />
         )}
       </View>
-      <Text style={styles.email}>{email}</Text>
+
       <View style={styles.infoRow}>
         <MaterialIcons name="phone" size={18} color="#007bff" style={{ marginRight: 6 }} />
-        <Text style={styles.infoText}>{phone_number}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Phone Number"
+          value={editableFields.phone_number}
+          onChangeText={(text) => setEditableFields({ ...editableFields, phone_number: text })}
+        />
       </View>
+
       <View style={styles.infoRow}>
         <MaterialIcons name="account-balance-wallet" size={18} color="#007bff" style={{ marginRight: 6 }} />
-        <Text style={styles.infoText}>Balance: ₹{balance.toLocaleString()}</Text>
+        <Text style={styles.infoText}>Balance: ₹{parseFloat(balance).toFixed(2)}</Text>
       </View>
+
       <View style={styles.infoRow}>
         <MaterialIcons name="location-on" size={18} color="#007bff" style={{ marginRight: 6 }} />
-        <Text style={styles.infoText}>{address}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Address"
+          value={editableFields.address}
+          onChangeText={(text) => setEditableFields({ ...editableFields, address: text })}
+        />
       </View>
+
       <View style={styles.infoRow}>
         <MaterialIcons name="cake" size={18} color="#007bff" style={{ marginRight: 6 }} />
-        <Text style={styles.infoText}>DOB: {date_of_birth}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Date of Birth (YYYY-MM-DD)"
+          value={editableFields.date_of_birth}
+          onChangeText={(text) => setEditableFields({ ...editableFields, date_of_birth: text })}
+        />
       </View>
+
+      <Button title="Update Profile" onPress={handleUpdateProfile} />
     </View>
   );
 };
@@ -60,6 +140,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   avatar: {
     width: 100,
     height: 100,
@@ -76,18 +161,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  email: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 8,
-  },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 12,
+    width: '100%',
   },
   infoText: {
     fontSize: 15,
     color: '#555',
+  },
+  input: {
+    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    fontSize: 15,
+    paddingVertical: 4,
+    color: '#333',
   },
 });
