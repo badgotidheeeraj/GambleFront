@@ -1,17 +1,17 @@
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import {
   StyleSheet,
   View,
   useColorScheme,
 } from 'react-native';
-import React, { useState } from 'react';
-
 import Login from './Component/Login';
 import Signup from './Component/Signup';
 import AppLayout from './Component/AppLayout';
 import Chat from './Component/Chat_Com';
 import Profile from './Component/UserProfile';
 import Deposit from './Component/Deposit';
+import HomeScreen from './Component/HomeScreen';
 
 import Toast from 'react-native-toast-message';
 import { NavigationContainer } from '@react-navigation/native';
@@ -28,10 +28,11 @@ const App = () => {
     <NavigationContainer>
       <View style={{ flex: 1, backgroundColor }}>
         <StatusBar style={isDarkMode ? 'light' : 'dark'} />
-        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
+        <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Dashboard">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
           <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <Stack.Screen name="HomeScreen" component={HomeScreen} />
         </Stack.Navigator>
         <Toast />
       </View>
@@ -61,6 +62,8 @@ const DashboardScreen = () => {
         return <Profile />;
       case 'deposit':
         return <Deposit />;
+      case 'homescreen':
+        return <HomeScreen />;
       default:
         return <Chat />;
     }

@@ -29,6 +29,25 @@ const AppLayout = ({ title, children, setActiveComponent }) => {
             <View style={styles.leftMenuCard}>
               <Text style={styles.leftMenuHeading}>Menu</Text>
 
+
+
+              <TouchableOpacity
+                style={styles.leftMenuItem}
+                onPress={() => {
+                  setShowMenu(false);
+                  setActiveComponent('homescreen');
+                }}>
+                <Icon
+                  name="trending-up"
+                  size={22}
+                  color="#4a90e2"
+                  style={styles.leftMenuIcon}
+                />
+
+                <Text style={styles.leftMenuText}>Home</Text>
+              </TouchableOpacity>
+
+
               <TouchableOpacity
                 style={styles.leftMenuItem}
                 onPress={() => {
@@ -59,6 +78,7 @@ const AppLayout = ({ title, children, setActiveComponent }) => {
                 <Text style={styles.leftMenuText}>Deposit</Text>
               </TouchableOpacity>
 
+              
             </View>
           </View>
         )}
